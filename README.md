@@ -7,7 +7,7 @@
 
 ## Cluster Analysis
 ##### This folder contains 3 files: 
-  Green_Holt_Smith_FinalProject_IST652, which is the deck we presented in class. 
+  ###### Green_Holt_Smith_FinalProject_IST652, which is the deck we presented in class. 
   IST652 Project Code, which allowed us to obtain, clean and analyze the data for our project. 
   ScriptingAnalysis_ProjectReport_Green_Holt_Smith_20200318, which was the final paper we submitted.
 
