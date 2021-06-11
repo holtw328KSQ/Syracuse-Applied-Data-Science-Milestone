@@ -1,1 +1,0 @@
-# Syracuse-Applied-Data-Science-Milestone
