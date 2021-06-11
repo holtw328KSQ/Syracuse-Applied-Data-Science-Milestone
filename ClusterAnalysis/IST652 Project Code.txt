@@ -1,0 +1,373 @@
+
+#Import Libraries
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+from sklearn.cluster import KMeans
+#Load data for KMeans. The dataset contains season sumamries from 1970-2019
+nfl = pd.read_csv("SeasonSummary_1970_2019.csv", index_col=0)
+#Convert the dataframe to an array
+nfl_arr = nfl.to_numpy()
+#Elbow Method to determine the number of clusters
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    kmeans.fit(nfl_arr)
+    wcss.append(kmeans.inertia_)
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+#Plot the 3 clusters
+kmeans = KMeans(n_clusters=3, init='k-means++', max_iter=500, n_init=10, random_state=0)
+pred_y = kmeans.fit_predict(nfl_arr)
+#Use colors variable to color dots based on the assigned eras
+colors = [2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0]
+plt.scatter(nfl_arr[:,0], nfl_arr[:,1],c=colors)
+cbar = plt.colorbar()
+cbar.set_label('Era')
+plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=100, c='red')
+plt.show()
+#Save the prediction
+clusters = pd.DataFrame(data=pred_y.flatten(), columns=['Era'])
+#Set nfl index back to column
+nfl.reset_index(level=0, inplace=True)
+#Add clusters back into the season summary
+nfl = pd.concat([clusters, nfl], axis=1)
+#Replace 0,1,2 with year ranges
+nfl["Era"].replace({0: '2011-2019', 1:'1979-2010', 2:'1970-1978'}, inplace=True)
+#Summary of averages by cluster
+#Average yards
+nfl_avg_yards = nfl.groupby('Era', as_index=False)['Yards'].mean()
+print(nfl_avg_yards)
+#Average pass yards
+nfl_avg_pass = nfl.groupby('Era', as_index=False)['PassYards'].mean()
+print(nfl_avg_pass)
+#Average rush yards
+nfl_avg_rush = nfl.groupby('Era', as_index=False)['RushYards'].mean()
+print(nfl_avg_rush)
+#Plot the data
+import matplotlib.pyplot as plt
+#Bar Plot for Yards
+plt.bar(nfl_avg_yards['Era'],nfl_avg_yards['Yards'],align='center',color=['green','blue','red'])
+plt.xticks([0,1,2],nfl_avg_yards['Era'])
+plt.xlabel('Era')
+plt.ylabel('Yards')
+plt.title('Average Yards Gained by Era')
+plt.show()
+#Bar Plot for Pass
+plt.bar(nfl_avg_pass['Era'],nfl_avg_pass['PassYards'],align='center',color=['green','blue','red'])
+plt.xticks([0,1,2],nfl_avg_pass['Era'])
+plt.xlabel('Era')
+plt.ylabel('PassYards')
+plt.title('Average Pass Yards by Era')
+plt.show()
+#Bar Plot for Rush
+plt.bar(nfl_avg_rush['Era'],nfl_avg_rush['RushYards'],align='center',color=['green','blue','red','black'])
+plt.xticks([0,1,2],nfl_avg_rush['Era'])
+plt.xlabel('Era')
+plt.ylabel('RushYards')
+plt.title('Average Rush Yards by Era')
+plt.show()
+#bar to show percentage of run vs. pass
+ax = nfl.plot(x="Season", y="Yards", kind="bar")
+nfl.plot(x="Season", y="PassYards", kind="bar", ax=ax, color="C2")
+nfl.plot(x="Season", y="RushYards", kind="bar", ax=ax, color="C3")
+plt.show()
+#line to show run and pass yards over years
+ax = nfl.plot(x="Season", y="RushYards", kind="line")
+nfl.plot(x="Season", y="PassYards", kind="line", ax=ax, color="C2")
+plt.show()
+#Insert new column to calculate how much rushing and passing yards contributes to overall yardage
+nfl['RunPercent'] = nfl['RushYards']/nfl['Yards']
+nfl['PassPercent'] = nfl['PassYards']/nfl['Yards']
+#Plot the percentages over years. Not used but saving code for later use
+#ax1 = nfl.plot(x="Season", y="RunPercent", kind="line")
+#nfl.plot(x="Season", y="PassPercent", kind="line", ax=ax1, color="C2")
+#plt.show()
+#Plot the number of turnovers over the years
+nfl.plot(x="Season", y="TO", kind="line", color="red")
+plt.show()
+#Plot the number of points scored over the years
+nfl.plot(x="Season", y="Points", kind="line", color="purple")
+plt.show()
+#Read in new dataframe called modern for outlier detection during modern era
+modern = pd.read_csv('Modern.csv')
+#Detect outlier for Points Not used but code saved for later use if needed
+#modern.boxplot(column='Points',by='Season',figsize=(9,9))
+#plt.show()
+#Detect outlier for Yards. Boxplots shows the outler the print tells you who the outlier is
+modern.boxplot(column='Yards',by='Season',figsize=(9,9))
+plt.show()
+print(modern[modern.Season == 2013].groupby(['Tm']).Yards.agg(['max']).nlargest(1,'max'))
+print(modern[modern.Season == 2016].groupby(['Tm']).Yards.agg(['max']).nlargest(1,'max'))
+print(modern[modern.Season == 2016].groupby(['Tm']).Yards.agg(['min']).nsmallest(1,'min'))
+print(modern[modern.Season == 2018].groupby(['Tm']).Yards.agg(['min']).nsmallest(1,'min'))
+#Detect outlier for Passing YardsBoxplots shows the outler the print tells you who the outlier is
+modern.boxplot(column='PassYards',by='Season',figsize=(9,9))
+plt.show()
+print(modern[modern.Season == 2013].groupby(['Tm']).PassYards.agg(['max']).nlargest(1,'max'))
+print(modern[modern.Season == 2016].groupby(['Tm']).PassYards.agg(['max']).nlargest(1,'max'))
+print(modern[modern.Season == 2019].groupby(['Tm']).PassYards.agg(['max']).nlargest(3,'max'))
+#Detect outlier for Rushing Yards Boxplots shows the outler the print tells you who the outlier is
+modern.boxplot(column='RushYards',by='Season',figsize=(9,9))
+plt.show()
+print(modern[modern.Season == 2011].groupby(['Tm']).RushYards.agg(['max']).nlargest(1,'max'))
+print(modern[modern.Season == 2014].groupby(['Tm']).RushYards.agg(['max']).nlargest(1,'max'))
+print(modern[modern.Season == 2016].groupby(['Tm']).RushYards.agg(['max']).nlargest(3,'max'))
+print(modern[modern.Season == 2016].groupby(['Tm']).RushYards.agg(['min']).nsmallest(2,'min'))
+print(modern[modern.Season == 2018].groupby(['Tm']).RushYards.agg(['max']).nlargest(1,'max'))
+print(modern[modern.Season == 2019].groupby(['Tm']).RushYards.agg(['max']).nlargest(1,'max'))
+#Exract the super bowl winners during the super bow era
+superBowl = pd.read_csv('NFL_SeasonResults.csv')
+superBowl = superBowl[(superBowl.Season >=2011) & (superBowl.Week == 'SuperBowl')]
+superBowl = superBowl[(superBowl.Result) == 'W']
+superBowl.sort_values(by=['Season'],inplace=True)
+superBowl = superBowl.reset_index(drop=True)
+superBowl = superBowl[['TeamID','Season']]
+print(superBowl)
+#USe list from above as info to get full season results and stats for Super Bowl winners
+superBowl_profiles = pd.read_csv('NFL_SeasonResults.csv')
+superBowl_profiles = superBowl_profiles[(superBowl_profiles.Season >=2011)]
+#Season summary for Super Bowl winners is below for each team and season.
+#Total is last row. This data was used to manually plot points in the visual
+Giants_2011 = superBowl_profiles[(superBowl_profiles.Season == 2011) & (superBowl_profiles.TeamID == 'Giants')]
+Giants_2011 = Giants_2011[['OffYards','OffPass','OffRush']]
+Giants_2011.loc['Total',:]= Giants_2011.sum(axis=0)
+Ravens_2012 = superBowl_profiles[(superBowl_profiles.Season == 2012) & (superBowl_profiles.TeamID == 'Ravens')]
+Ravens_2012 = Ravens_2012[['OffYards','OffPass','OffRush']]
+Ravens_2012.loc['Total',:]= Ravens_2012.sum(axis=0)
+Seahawks_2013 = superBowl_profiles[(superBowl_profiles.Season == 2013) & (superBowl_profiles.TeamID == 'Seahawks')]
+Seahawks_2013 = Seahawks_2013[['OffYards','OffPass','OffRush']]
+Seahawks_2013.loc['Total',:]= Seahawks_2013.sum(axis=0)
+Patriots_2014 = superBowl_profiles[(superBowl_profiles.Season == 2014) & (superBowl_profiles.TeamID == 'Patriots')]
+Patriots_2014 = Patriots_2014[['OffYards','OffPass','OffRush']]
+Patriots_2014.loc['Total',:]= Patriots_2014.sum(axis=0)
+Broncos_2015 = superBowl_profiles[(superBowl_profiles.Season == 2015) & (superBowl_profiles.TeamID == 'Broncos')]
+Broncos_2015 = Broncos_2015[['OffYards','OffPass','OffRush']]
+Broncos_2015.loc['Total',:]= Broncos_2015.sum(axis=0)
+Patriots_2016 = superBowl_profiles[(superBowl_profiles.Season == 2016) & (superBowl_profiles.TeamID == 'Patriots')]
+Patriots_2016 = Patriots_2016[['OffYards','OffPass','OffRush']]
+Patriots_2016.loc['Total',:]= Patriots_2016.sum(axis=0)
+Eagles_2017 = superBowl_profiles[(superBowl_profiles.Season == 2017) & (superBowl_profiles.TeamID == 'Eagles')]
+Eagles_2017 = Eagles_2017[['OffYards','OffPass','OffRush']]
+Eagles_2017.loc['Total',:]= Eagles_2017.sum(axis=0)
+Patriots_2018 = superBowl_profiles[(superBowl_profiles.Season == 2018) & (superBowl_profiles.TeamID == 'Patriots')]
+Patriots_2018 = Patriots_2018[['OffYards','OffPass','OffRush']]
+Patriots_2018.loc['Total',:]= Patriots_2018.sum(axis=0)
+Chiefs_2019 = superBowl_profiles[(superBowl_profiles.Season == 2019) & (superBowl_profiles.TeamID == 'Chiefs')]
+Chiefs_2019 = Chiefs_2019[['OffYards','OffPass','OffRush']]
+Chiefs_2019.loc['Total',:]= Chiefs_2019.sum(axis=0)
+
+
+#Import libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#Read Data
+nfl = pd.read_csv("NFL_SeasonResults.csv")
+nfl.dtypes
+
+#Only include seasons from 1970 and on, remove 1982, filter data for only regular season to be used for summary statistics
+nfl = nfl.drop(['Column1','Date','Time'],axis=1)
+nfl = nfl[(nfl.Season >= 1970) &
+              (nfl.Season != 1982)]# &
+              #(nfl.Result != 'nan')]
+reg_nfl = nfl[nfl.Week.str.contains('1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18',case=False,regex=True)]
+#reg_nfl.head(100)
+reg_nfl = reg_nfl.replace(np.NaN,0)
+nfl_groupdata = reg_nfl.groupby('TeamID').mean().reset_index().nlargest(10,'OffPass')
+#nfl_groupdata
+#nfl_groupdata.head(100)
+#Dictionary to identify Seasonal Quarters
+week_to_cat = {'1':'Qtr1',
+               '2': 'Qtr1',
+               '3': 'Qtr1',
+               '4': 'Qtr1',
+               '5': 'Qtr2',
+               '6': 'Qtr2',
+               '7': 'Qtr2',
+               '8': 'Qtr2',
+               '9': 'Qtr3',
+               '10':'Qtr3',
+               '11':'Qtr3',
+               '12':'Qtr3',
+               '13':'Qtr4',
+               '14':'Qtr4',
+               '15':'Qtr4',
+               '16':'Qtr4',
+               '17':'Qtr4',
+               '18':'Qtr4'
+              }
+reg_nfl['WeekCat'] = reg_nfl["Week"].map(week_to_cat)
+#Histogram of Seasonal Quarters
+#labels = list(['SuperBowl','Conf. Champ.','Division','Wild Card'])
+sns.set_style("white")
+legend = ['Season Q1', 'Season Q2', 'Season Q3','Season Q4']
+plt.hist([reg_nfl[reg_nfl.WeekCat == 'Qtr1'].OffYards, \
+          reg_nfl[reg_nfl.WeekCat == 'Qtr2'].OffYards, \
+          reg_nfl[reg_nfl.WeekCat == 'Qtr3'].OffYards, \
+          reg_nfl[reg_nfl.WeekCat == 'Qtr4'].OffYards], \
+          bins = 15, stacked = True)
+plt.legend(legend)
+plt.show()
+#SuperBowl Boxplot
+superbowl_results = nfl[nfl.Week.str.contains('SuperBowl')]
+boxplot = superbowl_results.boxplot(column=['OffYards', 'OffRush', 'OffPass'])
+plt.show()
+#Division BoxPlot
+division_results = nfl[nfl.Week.str.contains('Division')]
+boxplot = division_results.boxplot(column=['OffYards', 'OffRush', 'OffPass'])
+plt.show()
+#Conf Champ Boxplot
+champ_results = nfl[nfl.Week.str.contains('Conf. Champ.')]
+boxplot = champ_results.boxplot(column=['OffYards', 'OffRush', 'OffPass'])
+plt.show()
+#Wild Card Boxplot
+wild_results = nfl[nfl.Week.str.contains('Wild Card')]
+boxplot = wild_results.boxplot(column=['OffYards', 'OffRush', 'OffPass'])
+plt.show()
+#Summary Stats
+print(reg_nfl.groupby(['Season']).OffRush.agg(['sum','mean','max','min']).nlargest(5,'mean'))
+print(reg_nfl.groupby(['Season']).OffPass.agg(['sum','mean','max','min']).nlargest(5,'mean'))
+print(reg_nfl.groupby(['Season']).OffYards.agg(['sum','mean','max','min']).nlargest(5,'mean'))
+#Off Yards Outlier - SuperBowl
+superbowl_yards_max = nfl[nfl.Week == 'SuperBowl'].groupby(['TeamID','Season','Opponent','Result']).OffYards.agg(['max']).nlargest(2,'max')
+print(superbowl_yards_max)
+# Rush Yards Outlier - SuperBowl
+superbowl_rush_max = nfl[nfl.Week == 'SuperBowl'].groupby(['TeamID', 'Season', 'Opponent', 'Result']).OffRush.agg(['max']).nlargest(4, 'max')
+print(superbowl_rush_max)
+#Pass Yards Outlier - SuperBowl
+superbowl_pass_max = nfl[nfl.Week == 'SuperBowl'].groupby(['TeamID','Season','Opponent','Result']).OffPass.agg(['max']).nlargest(1,'max')
+print(superbowl_pass_max)
+#Rush Yards Outlier - Division
+division_rush_max = nfl[nfl.Week == 'Division'].groupby(['TeamID','Season','Opponent','Result']).OffRush.agg(['max']).nlargest(8,'max')
+print(division_rush_max)
+#Rush Yards Outlier - Division
+division_pass_max = nfl[nfl.Week == 'Division'].groupby(['TeamID','Season','Opponent','Result']).OffPass.agg(['max']).nlargest(3,'max')
+print(division_pass_max)
+#Off Yards Yards Outlier - Conf Champ
+confchamp_yards_max = nfl[nfl.Week == 'Conf. Champ.'].groupby(['TeamID','Season','Opponent','Result']).OffYards.agg(['max']).nlargest(1,'max')
+print(confchamp_yards_max)
+# Rush Yards Yards Outlier - Conf Champ
+confchamp_rush_max = nfl[nfl.Week == 'Conf. Champ.'].groupby(['TeamID', 'Season', 'Opponent', 'Result']).OffRush.agg(['max']).nlargest(3, 'max')
+print(confchamp_rush_max)
+#PAss Yards Yards Outlier - Conf Champ
+confchamp_pass_max = nfl[nfl.Week == 'Conf. Champ.'].groupby(['TeamID','Season','Opponent','Result']).OffPass.agg(['max']).nlargest(1,'max')
+print(confchamp_pass_max)
+#Off Yards Outlier - Wild Card
+wildcard_off_max = nfl[nfl.Week == 'Wild Card'].groupby(['TeamID','Season','Opponent','Result']).OffYards.agg(['max']).nlargest(1,'max')
+print(wildcard_off_max)
+# Rush Yards Outlier - Wild Card
+wildcard_rush_max = nfl[nfl.Week == 'Wild Card'].groupby(['TeamID', 'Season', 'Opponent', 'Result']).OffRush.agg(['max']).nlargest(3, 'max')
+print(wildcard_rush_max)
+#Pass Yards Outlier - Wild Card
+wildcard_pass_max = nfl[nfl.Week == 'Wild Card'].groupby(['TeamID','Season','Opponent','Result']).OffPass.agg(['max']).nlargest(4,'max')
+print(wildcard_pass_max)
+
+#Read data
+allresults = pd.read_excel('NFL_SeasonResults.xlsx')
+
+#data cleanup and preparation
+allresults = allresults.drop(['Column1','Date'],axis=1)
+allresults = allresults[(allresults.Season >= 1970) &
+                        (allresults.Season != 1982) &
+                        (allresults.Result != 'nan')]
+allresults['deltaTO'] = allresults['OffTO'] - allresults['DefTO']
+allresults['deltaScore'] = allresults['TeamScore'] - allresults['OppScore']
+regular_season_results = allresults[allresults.Week.str.contains('1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18',case=False,regex=True)]
+postseason_results = allresults[allresults.Week.str.contains('Division|Conf. Champ.|Wild Card|SuperBowl',case=False,regex=True)]
+superbowl_results = allresults[allresults.Week.str.contains('SuperBowl')]
+superbowl_winners = superbowl_results[superbowl_results.Result == 'W']
+​
+regular_season_results_avg = regular_season_results.groupby(['Season','TeamID']).mean()
+postseason_results_avg = postseason_results.groupby(['Season','TeamID']).mean()
+​
+nfl_points_team = regular_season_results.groupby(['TeamID','Season'],as_index=False)['TeamScore'].mean()
+z = nfl_points_team.sort_values(by='TeamScore').drop_duplicates(subset='Season')
+z_bySeason = z.sort_values('Season')
+z_byTeam = z.sort_values('TeamID')
+
+
+## word cloud of Super Bowl winners
+#import libraries
+from wordcloud import WordCloud, ImageColorGenerator
+from PIL import Image
+import matplotlib.pyplot as plt
+​
+# List of Super Bowl winners
+sb_teams = superbowl_winners['TeamID'].values.tolist()
+text = ' '.join([str(team) for team in sb_teams])
+​
+# Convert the image into a numpy array
+lombardi = np.array(Image.open('Lombardi Trophy.jpg'))
+​
+# Render the same colour as that of the image to the WordCloud
+color = ImageColorGenerator(lombardi)
+​
+# pass “lombardi” as one of the parameters to create WordCloud. max-words indicates the maximum number of words that must be included in the WordCloud
+wordcloud = WordCloud(width=5500,height=5000,mask=lombardi,background_color='white', random_state=42,contour_width=.25, contour_color='grey').generate(text)
+​
+# Plot the word cloud
+plt.figure(figsize=(15,10))
+plt.imshow(wordcloud.recolor(color_func=color),interpolation='bilinear')
+plt.axis("off")
+plt.show()
+
+
+## Points Differential
+game_winners = allresults[allresults.Result=='W']
+points_differential_by_era = nfl.iloc[:,0:2].merge(game_winners[['Season','deltaScore']],how='inner',on='Season').groupby('Era').mean().drop('Season',axis=1).reset_index()
+points_differential_by_season = nfl.iloc[:,0:2].merge(game_winners[['Season','deltaScore']],how='inner',on='Season').groupby('Season').mean().reset_index()
+super_bowl_points_differential_by_era = nfl.iloc[:,0:2].merge(superbowl_winners[['Season','deltaScore']],how='inner',on='Season').groupby('Era').mean().drop('Season',axis=1).reset_index()
+super_bowl_points_differential_by_season = nfl.iloc[:,0:2].merge(superbowl_winners[['Season','deltaScore']],how='inner',on='Season').groupby('Season').mean().reset_index()
+​
+# Bar Plot for Points Differential by Era
+plt.bar(points_differential_by_era['Era'],points_differential_by_era['deltaScore'],align='center',color=['green','black','red'])
+plt.xticks([1,2,3],points_differential_by_era['Era'])
+plt.xlabel('Era')
+plt.ylabel('PointsDifferential')
+plt.title('Point Differential by Era')
+plt.show()
+​
+# Bar Plot for Super bowl Points Differential by Era
+plt.bar(super_bowl_points_differential_by_era['Era'],super_bowl_points_differential_by_era['deltaScore'],align='center',color=['green','black','red'])
+plt.xticks([1,2,3],super_bowl_points_differential_by_era['Era'])
+plt.xlabel('Era')
+plt.ylabel('PointsDifferential')
+plt.title('Super Bowl Point Differential by Era')
+plt.show()
+​
+# Line graph to show point differential by years
+points_differential_by_season.plot(x='Season', y='deltaScore', kind='line')
+plt.show()
+​
+# Super Bowl
+super_bowl_points_differential_by_season.plot(x='Season', y='deltaScore', kind='line')
+plt.show()
+​
+# Box and whiskers of point differential
+game_winners_era = game_winners.merge(nfl.iloc[:,0:2],how='inner',on='Season')
+game_winners_era = game_winners_era[['Season','Era','TeamID','deltaScore']]
+sb_game_winners_era = superbowl_winners.merge(nfl.iloc[:,0:2],how='inner',on='Season')
+sb_game_winners_era = sb_game_winners_era[['Season','Era','TeamID','deltaScore']]
+​
+# By Team
+game_winners_era.drop(['Era','Season'],axis=1).boxplot(by='TeamID',vert=False)
+plt.title('Point Differential by Team')
+plt.show()
+​
+# By Super Bowl winning teams
+sb_game_winners_era.drop(['Era','Season'],axis=1).boxplot(by='TeamID',vert=False)
+plt.title('Super Bowl Point Differential by Team')
+plt.show()
+​
+# Modern era by season
+game_winners_modern_era = game_winners_era[game_winners_era.Era==3].drop('Era',axis=1)
+game_winners_modern_era.boxplot(by='Season')
+plt.title('Point Differential of Modern Era by Season')
+plt.show()
+
