@@ -22,3 +22,8 @@
   ###### ProjectDeliverable2.sql: The sql code used to create the data warehouse.
   ###### ProjectDeliverable2_Holt_20180923: Final paper submitted for the class
 
+## Linear Model
+##### This folder contains  files: 
+  ###### 
+  ###### 
+  ###### 
