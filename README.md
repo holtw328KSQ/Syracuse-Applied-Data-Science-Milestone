@@ -23,7 +23,7 @@
   ###### ProjectDeliverable2_Holt_20180923: Final paper submitted for the class
 
 ## Linear Model
-##### This folder contains  files: 
-  ###### 
-  ###### 
-  ###### 
+##### This folder contains 3 files : 
+  ###### Holt_Lab3 (1).py: Python code used to complete the analysis
+  ###### Holt_Lab3.pdf: The report I submitted
+  ###### Lab3.txt: A notepad version of the code in case the ".py" file does not load properly
